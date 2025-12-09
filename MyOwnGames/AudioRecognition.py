@@ -1,19 +1,30 @@
+import sounddevice as sd
+import numpy as np
 import speech_recognition as sr
 
-# Create a recognizer
-recognizer = sr.Recognizer()
+def record_audio(duration=5, fs=16000):
+    print("Recording...")
+    audio = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype='int16')
+    sd.wait()
+    print("Done recording!")
+    return audio, fs
 
-with sr.Microphone() as mic:
-    print("Adjusting for background noise...")   
-    recognizer.adjust_for_ambient_noise(mic, duration=1)
-    print("Listening... Say something!")
+def main():
+    recognizer = sr.Recognizer()
 
-    audio = recognizer.listen(mic)
+    # Record audio using sounddevice (NO PyAudio)
+    audio_data, fs = record_audio(duration=4)
 
+    # Convert numpy audio to SpeechRecognition AudioData
+    audio_bytes = audio_data.tobytes()
+    audio = sr.AudioData(audio_bytes, fs, 2)  # 2 bytes per sample for int16
+
+    print("Recognizing...")
     try:
         text = recognizer.recognize_google(audio)
         print("You said:", text)
-    except sr.UnknownValueError:
-        print("Could not understand audio.")
-    except sr.RequestError as e:
-        print("API request error:", e)
+    except Exception as e:
+        print("Recognition error:", e)
+
+if __name__ == "__main__":
+    main()
